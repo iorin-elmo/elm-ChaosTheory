@@ -4436,9 +4436,6 @@ var $elm$core$Set$toList = function (_v0) {
 	return $elm$core$Dict$keys(dict);
 };
 var $elm$core$Basics$GT = {$: 'GT'};
-var $elm$core$Basics$identity = function (x) {
-	return x;
-};
 var $author$project$Main$Tick = function (a) {
 	return {$: 'Tick', a: a};
 };
@@ -4857,6 +4854,9 @@ var $elm$browser$Browser$External = function (a) {
 };
 var $elm$browser$Browser$Internal = function (a) {
 	return {$: 'Internal', a: a};
+};
+var $elm$core$Basics$identity = function (x) {
+	return x;
 };
 var $elm$browser$Browser$Dom$NotFound = function (a) {
 	return {$: 'NotFound', a: a};
@@ -5563,20 +5563,14 @@ var $elm$time$Time$every = F2(
 		return $elm$time$Time$subscription(
 			A2($elm$time$Time$Every, interval, tagger));
 	});
-var $author$project$Main$initPos = _Utils_Tuple3(0.5, 1, 1);
-var $author$project$Main$init = {currentPos: $author$project$Main$initPos, previousPos: _List_Nil};
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $author$project$Main$initPos = _Utils_Tuple3(-10.6, -4.4, 28.6);
+var $author$project$Main$init = {currentPos: $author$project$Main$initPos, previousPos: _List_Nil, rotateX: 0, rotateY: 0, scale: 10};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$tickSpeed = 200;
-var $author$project$Main$dt = function (_v0) {
-	var x = _v0.a;
-	var y = _v0.b;
-	var z = _v0.c;
-	var dz = (x * y) - ((8 / 3) * z);
-	var dy = ((28 * x) - y) - (x * z);
-	var dx = 10 * (y - x);
-	return _Utils_Tuple3(dx, dy, dz);
-};
+var $author$project$Main$tickSpeed = 640;
 var $author$project$Main$plus = F2(
 	function (_v0, _v1) {
 		var x = _v0.a;
@@ -5585,46 +5579,103 @@ var $author$project$Main$plus = F2(
 		var dx = _v1.a;
 		var dy = _v1.b;
 		var dz = _v1.c;
-		return _Utils_Tuple3(x + (dx * (1 / $author$project$Main$tickSpeed)), y + (dy * (1 / $author$project$Main$tickSpeed)), z + (dz * (1 / $author$project$Main$tickSpeed)));
+		return _Utils_Tuple3(x + dx, y + dy, z + dz);
 	});
-var $author$project$Main$trajectoryLength = 300;
-var $author$project$Main$update = F2(
-	function (msg, model) {
-		var newPreviousPos = function () {
-			var _v1 = model.previousPos;
-			if (_v1.b) {
-				var hd = _v1.a;
-				var tl = _v1.b;
-				return (_Utils_cmp(
-					$elm$core$List$length(model.previousPos),
-					$author$project$Main$trajectoryLength) > 0) ? _Utils_ap(
-					tl,
-					_List_fromArray(
-						[model.currentPos])) : _Utils_ap(
-					model.previousPos,
-					_List_fromArray(
-						[model.currentPos]));
-			} else {
-				return _List_fromArray(
-					[model.currentPos]);
-			}
-		}();
-		return {
-			currentPos: A2(
-				$author$project$Main$plus,
-				model.currentPos,
-				$author$project$Main$dt(model.currentPos)),
-			previousPos: newPreviousPos
-		};
-	});
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
+var $author$project$Main$lorenz = function (_v0) {
+	var x = _v0.a;
+	var y = _v0.b;
+	var z = _v0.c;
+	var step = 0.002;
+	var dz = (x * y) - ((8 / 3) * z);
+	var dy = ((28 * x) - y) - (x * z);
+	var dx = 10 * (y - x);
+	return _Utils_Tuple3(dx * step, dy * step, dz * step);
+};
+var $author$project$Main$selectedAttractor = $author$project$Main$lorenz;
+var $elm$core$String$toFloat = _String_toFloat;
+var $author$project$Main$trajectoryLength = 1000;
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
 		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+			return _default;
 		}
 	});
+var $author$project$Main$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'Tick':
+				var newPreviousPos = function () {
+					var _v1 = model.previousPos;
+					if (_v1.b) {
+						var hd = _v1.a;
+						var tl = _v1.b;
+						return (_Utils_cmp(
+							$elm$core$List$length(model.previousPos),
+							$author$project$Main$trajectoryLength) > 0) ? _Utils_ap(
+							tl,
+							_List_fromArray(
+								[model.currentPos])) : _Utils_ap(
+							model.previousPos,
+							_List_fromArray(
+								[model.currentPos]));
+					} else {
+						return _List_fromArray(
+							[model.currentPos]);
+					}
+				}();
+				return _Utils_update(
+					model,
+					{
+						currentPos: A2(
+							$author$project$Main$plus,
+							model.currentPos,
+							$author$project$Main$selectedAttractor(model.currentPos)),
+						previousPos: newPreviousPos
+					});
+			case 'RotateX':
+				var str = msg.a;
+				return _Utils_update(
+					model,
+					{
+						rotateX: A2(
+							$elm$core$Maybe$withDefault,
+							model.rotateX,
+							$elm$core$String$toFloat(str))
+					});
+			case 'RotateY':
+				var str = msg.a;
+				return _Utils_update(
+					model,
+					{
+						rotateY: A2(
+							$elm$core$Maybe$withDefault,
+							model.rotateY,
+							$elm$core$String$toFloat(str))
+					});
+			default:
+				var str = msg.a;
+				return _Utils_update(
+					model,
+					{
+						scale: A2(
+							$elm$core$Maybe$withDefault,
+							model.scale,
+							$elm$core$String$toFloat(str))
+					});
+		}
+	});
+var $author$project$Main$RotateX = function (a) {
+	return {$: 'RotateX', a: a};
+};
+var $author$project$Main$RotateY = function (a) {
+	return {$: 'RotateY', a: a};
+};
+var $author$project$Main$Scale = function (a) {
+	return {$: 'Scale', a: a};
+};
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$circle = $elm$svg$Svg$trustedNode('circle');
 var $elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
@@ -5634,8 +5685,8 @@ var $author$project$Main$f2s = $elm$core$String$fromFloat;
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var $elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
 var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
-var $author$project$Main$createCircleXY = F3(
-	function (_v0, isCurrentPos, opacity) {
+var $author$project$Main$createCircle = F2(
+	function (_v0, opacity) {
 		var x = _v0.a;
 		var y = _v0.b;
 		var z = _v0.c;
@@ -5648,39 +5699,216 @@ var $author$project$Main$createCircleXY = F3(
 					$elm$svg$Svg$Attributes$cy(
 					$author$project$Main$f2s(y + 25)),
 					$elm$svg$Svg$Attributes$r('1'),
-					$elm$svg$Svg$Attributes$fill(
-					isCurrentPos ? 'red' : 'black'),
+					$elm$svg$Svg$Attributes$fill('black'),
 					$elm$svg$Svg$Attributes$fillOpacity(
 					$author$project$Main$f2s(opacity))
 				]),
 			_List_Nil);
 	});
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$max = $elm$html$Html$Attributes$stringProperty('max');
+var $elm$html$Html$Attributes$min = $elm$html$Html$Attributes$stringProperty('min');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Main$createSlider = F4(
+	function (min, max, value, msg) {
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$input,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$type_('range'),
+							$elm$html$Html$Attributes$max(
+							$author$project$Main$f2s(max)),
+							$elm$html$Html$Attributes$min(
+							$author$project$Main$f2s(min)),
+							$elm$html$Html$Attributes$value(
+							$author$project$Main$f2s(value)),
+							$elm$html$Html$Events$onInput(msg)
+						]),
+					_List_Nil),
+					$elm$html$Html$text(
+					$author$project$Main$f2s(value))
+				]));
+	});
+var $elm$core$Basics$pi = _Basics_pi;
+var $elm$core$Basics$degrees = function (angleInDegrees) {
+	return (angleInDegrees * $elm$core$Basics$pi) / 180;
+};
 var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
+var $author$project$Main$linearMap = F2(
+	function (_v0, _v4) {
+		var _v1 = _v0.a;
+		var a11 = _v1.a;
+		var a12 = _v1.b;
+		var a13 = _v1.c;
+		var _v2 = _v0.b;
+		var a21 = _v2.a;
+		var a22 = _v2.b;
+		var a23 = _v2.c;
+		var _v3 = _v0.c;
+		var a31 = _v3.a;
+		var a32 = _v3.b;
+		var a33 = _v3.c;
+		var x = _v4.a;
+		var y = _v4.b;
+		var z = _v4.c;
+		return _Utils_Tuple3(((a11 * x) + (a12 * y)) + (a13 * z), ((a21 * x) + (a22 * y)) + (a23 * z), ((a31 * x) + (a32 * y)) + (a33 * z));
+	});
+var $author$project$Main$multiply = F2(
+	function (_v0, _v4) {
+		var _v1 = _v0.a;
+		var a11 = _v1.a;
+		var a12 = _v1.b;
+		var a13 = _v1.c;
+		var _v2 = _v0.b;
+		var a21 = _v2.a;
+		var a22 = _v2.b;
+		var a23 = _v2.c;
+		var _v3 = _v0.c;
+		var a31 = _v3.a;
+		var a32 = _v3.b;
+		var a33 = _v3.c;
+		var _v5 = _v4.a;
+		var b11 = _v5.a;
+		var b12 = _v5.b;
+		var b13 = _v5.c;
+		var _v6 = _v4.b;
+		var b21 = _v6.a;
+		var b22 = _v6.b;
+		var b23 = _v6.c;
+		var _v7 = _v4.c;
+		var b31 = _v7.a;
+		var b32 = _v7.b;
+		var b33 = _v7.c;
+		return _Utils_Tuple3(
+			_Utils_Tuple3(((a11 * b11) + (a12 * b21)) + (a13 * b31), ((a11 * b12) + (a12 * b22)) + (a13 * b32), ((a11 * b13) + (a12 * b23)) + (a13 * b33)),
+			_Utils_Tuple3(((a21 * b11) + (a22 * b21)) + (a23 * b31), ((a21 * b12) + (a22 * b22)) + (a23 * b32), ((a21 * b13) + (a22 * b23)) + (a23 * b33)),
+			_Utils_Tuple3(((a31 * b11) + (a32 * b21)) + (a33 * b31), ((a31 * b12) + (a32 * b22)) + (a33 * b32), ((a31 * b13) + (a32 * b23)) + (a33 * b33)));
+	});
+var $elm$core$Basics$cos = _Basics_cos;
+var $elm$core$Basics$sin = _Basics_sin;
+var $author$project$Main$rotateX = function (theta) {
+	return _Utils_Tuple3(
+		_Utils_Tuple3(1, 0, 0),
+		_Utils_Tuple3(
+			0,
+			$elm$core$Basics$cos(theta),
+			-$elm$core$Basics$sin(theta)),
+		_Utils_Tuple3(
+			0,
+			$elm$core$Basics$sin(theta),
+			$elm$core$Basics$cos(theta)));
+};
+var $author$project$Main$rotateY = function (theta) {
+	return _Utils_Tuple3(
+		_Utils_Tuple3(
+			$elm$core$Basics$cos(theta),
+			0,
+			$elm$core$Basics$sin(theta)),
+		_Utils_Tuple3(0, 1, 0),
+		_Utils_Tuple3(
+			-$elm$core$Basics$sin(theta),
+			0,
+			$elm$core$Basics$cos(theta)));
+};
+var $author$project$Main$scale = function (k) {
+	return _Utils_Tuple3(
+		_Utils_Tuple3(k, 0, 0),
+		_Utils_Tuple3(0, k, 0),
+		_Utils_Tuple3(0, 0, k));
+};
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
 var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var $author$project$Main$view = function (model) {
 	return A2(
-		$elm$svg$Svg$svg,
+		$elm$html$Html$div,
+		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$svg$Svg$Attributes$width('100'),
-				$elm$svg$Svg$Attributes$height('100'),
-				$elm$svg$Svg$Attributes$viewBox('0 0 100 100')
-			]),
-		A2(
-			$elm$core$List$append,
-			A2(
-				$elm$core$List$indexedMap,
-				F2(
-					function (n, pos) {
-						return A3($author$project$Main$createCircleXY, pos, false, n / $author$project$Main$trajectoryLength);
-					}),
-				model.previousPos),
-			_List_fromArray(
-				[
-					A3($author$project$Main$createCircleXY, model.currentPos, true, 1)
-				])));
+				A2(
+				$elm$svg$Svg$svg,
+				_List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$width('1000'),
+						$elm$svg$Svg$Attributes$height('800'),
+						$elm$svg$Svg$Attributes$viewBox('0 0 1000 800')
+					]),
+				A2(
+					$elm$core$List$indexedMap,
+					F2(
+						function (n, pos) {
+							var mat = A2(
+								$author$project$Main$multiply,
+								$author$project$Main$scale(model.scale),
+								A2(
+									$author$project$Main$multiply,
+									$author$project$Main$rotateY(
+										$elm$core$Basics$degrees(model.rotateY)),
+									$author$project$Main$rotateX(
+										$elm$core$Basics$degrees(model.rotateX))));
+							var rotatedPos = A2($author$project$Main$linearMap, mat, pos);
+							var movedPos = A2(
+								$author$project$Main$plus,
+								rotatedPos,
+								_Utils_Tuple3(25 * model.scale, 25 * model.scale, 25 * model.scale));
+							return A2($author$project$Main$createCircle, movedPos, n / $author$project$Main$trajectoryLength);
+						}),
+					model.previousPos)),
+				A4($author$project$Main$createSlider, 0, 180, model.rotateX, $author$project$Main$RotateX),
+				A4($author$project$Main$createSlider, 0, 90, model.rotateY, $author$project$Main$RotateY),
+				A4($author$project$Main$createSlider, 1, 20, model.scale, $author$project$Main$Scale)
+			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{
